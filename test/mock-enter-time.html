@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Enter Time - Workday</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 16px 420px 16px 16px; }
+    [hidden] { display: none !important; }
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 6px; vertical-align: top; min-width: 90px; }
+    #qa { position: fixed; left: 16px; top: 16px; background: #fff; border: 1px solid #999; padding: 12px; z-index: 5; }
+    #viewall { position: fixed; left: 40px; top: 80px; background: #fff; border: 1px solid #333; padding: 12px; z-index: 6; }
+    #log { margin-top: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1 data-automation-id="pageHeaderTitleText">Enter Time</h1>
+  <div data-testid="date_range">Nov 2 – 15, 2026</div>
+  <button type="button" data-testid="actions_button" aria-label="Actions">Actions</button>
+  <div id="menu" hidden>
+    <button type="button" role="menuitem">Quick Add</button>
+  </div>
+  <div data-testid="calendar_container" id="calendar"></div>
+  <div data-testid="total_quantity" id="total">20</div>
+
+  <div id="qa" role="dialog" hidden>
+    <h2>Quick Add</h2>
+    <div id="step-week">
+      <div>Select Week</div>
+      <div data-automation-id="selectOneRadioGroup" role="radiogroup" aria-label="Select Week">
+        <div data-automation-id="radioBtn" role="radio" aria-label="11/02/2026 - 11/08/2026">11/02/2026 - 11/08/2026</div>
+        <div data-automation-id="radioBtn" role="radio" aria-label="11/09/2026 - 11/15/2026">11/09/2026 - 11/15/2026</div>
+      </div>
+    </div>
+    <div id="step-position" hidden>
+      <div data-automation-id="selectedItem">Regular Hours</div>
+      <div data-automation-id="selectWidget" role="combobox" aria-label="Position">Position</div>
+      <div data-automation-id="selectSelectedOption" id="selected-position">P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)</div>
+      <div id="options" hidden>
+        <div data-automation-id="promptOption">P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)</div>
+        <div data-automation-id="promptOption">P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)</div>
+        <div data-automation-id="promptOption">P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)</div>
+        <div data-automation-id="promptOption">P599534 STAT UTA/Grader-Somal (+), AS-Statistics (STAT)-JM (Harsimran Somal)</div>
+      </div>
+    </div>
+    <div id="step-grid" hidden>
+      <table data-automation-id="table">
+        <tr data-automation-id="row">
+          <th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th><th>Sunday</th>
+        </tr>
+        <tr data-automation-id="row" id="hour-row">
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+          <td><input data-automation-id="numericInput" value="0"></td>
+        </tr>
+      </table>
+    </div>
+    <button type="button" id="next">Next</button>
+    <button type="button" data-automation-id="wd-CommandButton_uic_okButton" id="ok">OK</button>
+    <button type="button" id="cancel">Cancel</button>
+  </div>
+
+  <div id="viewall" role="dialog" hidden>
+    <div id="viewall-body"></div>
+    <button type="button">Close</button>
+  </div>
+  <div id="log"></div>
+  <script>
+    const days = ["Nov 2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"];
+    const blocks = {
+      7: ["1 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)"],
+      8: [
+        "1 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+        "3.25 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
+      ],
+      9: {
+        shown: [
+          "1.25 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+          "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+        ],
+        all: [
+          "1.25 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+          "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)",
+          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
+        ]
+      },
+      10: [
+        "2 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+        "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+      ],
+      11: [
+        "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
+        "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+      ],
+      12: ["1 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"],
+      13: {
+        shown: [
+          "0.5 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
+        ],
+        all: [
+          "0.5 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
+          "1 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+        ]
+      }
+    };
+    const calendar = document.getElementById("calendar");
+    days.forEach((label, index) => {
+      const cell = document.createElement("div");
+      cell.setAttribute("data-testid", "date_cell_" + index);
+      const date = document.createElement("div");
+      date.setAttribute("data-testid", "date");
+      date.textContent = label;
+      cell.appendChild(date);
+      const entry = blocks[index];
+      const shown = Array.isArray(entry) ? entry : entry ? entry.shown : [];
+      shown.forEach((line) => {
+        const sub = document.createElement("div");
+        sub.setAttribute("data-testid", "calendar_entry_subtitle");
+        sub.textContent = line;
+        cell.appendChild(sub);
+      });
+      if (entry && entry.all) {
+        const more = document.createElement("button");
+        more.type = "button";
+        more.setAttribute("data-testid", "view_all_caret_button");
+        more.setAttribute("aria-label", "View All (" + entry.all.length + ")");
+        more.addEventListener("click", () => {
+          const body = document.getElementById("viewall-body");
+          body.replaceChildren();
+          entry.all.forEach((line) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = "Regular Hours. Not Submitted " + line;
+            body.appendChild(button);
+          });
+          document.getElementById("viewall").hidden = false;
+        });
+        cell.appendChild(more);
+      }
+      calendar.appendChild(cell);
+    });
+    document.querySelector("#viewall button").addEventListener("click", () => {
+      document.getElementById("viewall").hidden = true;
+    });
+    const log = document.getElementById("log");
+    let okClicks = 0;
+    document.querySelector("[data-testid=actions_button]").addEventListener("click", () => {
+      document.getElementById("menu").hidden = false;
+    });
+    document.querySelector("[role=menuitem]").addEventListener("click", () => {
+      document.getElementById("menu").hidden = true;
+      document.getElementById("qa").hidden = false;
+      document.getElementById("step-week").hidden = false;
+      document.getElementById("step-position").hidden = true;
+      document.getElementById("step-grid").hidden = true;
+    });
+    document.getElementById("next").addEventListener("click", () => {
+      if (!document.getElementById("step-week").hidden) {
+        document.getElementById("step-week").hidden = true;
+        document.getElementById("step-position").hidden = false;
+        return;
+      }
+      if (!document.getElementById("step-position").hidden) {
+        document.getElementById("step-position").hidden = true;
+        document.getElementById("step-grid").hidden = false;
+        document.querySelectorAll("[data-automation-id=numericInput]").forEach((input) => {
+          input.value = "0";
+        });
+      }
+    });
+    document.querySelector("[data-automation-id=selectWidget]").addEventListener("click", () => {
+      document.getElementById("options").hidden = false;
+    });
+    document.querySelectorAll("[data-automation-id=promptOption]").forEach((option) => {
+      option.addEventListener("click", () => {
+        document.getElementById("selected-position").textContent = option.textContent;
+        document.getElementById("options").hidden = true;
+      });
+    });
+    document.getElementById("ok").addEventListener("click", () => {
+      okClicks += 1;
+      log.textContent = "OK clicks: " + okClicks;
+    });
+    document.getElementById("cancel").addEventListener("click", () => {
+      document.getElementById("qa").hidden = true;
+    });
+    window.__mock = {
+      okClicks: () => okClicks,
+      inputs: () => [...document.querySelectorAll("[data-automation-id=numericInput]")].map((input) => input.value),
+      position: () => document.getElementById("selected-position").textContent
+    };
+  </script>
+  <script src="../workday-weekly-hours.user.js"></script>
+</body>
+</html>
