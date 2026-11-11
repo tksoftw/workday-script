@@ -1,30 +1,32 @@
 # Workday weekly hours
 
-Tampermonkey script that fills Quick Add hours for four UVA jobs. It does not submit the timesheet.
+Two Tampermonkey scripts for UVA Workday Enter Time. Neither one submits the timesheet.
 
 ## Install
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
-2. Create a new script and paste `workday-weekly-hours.user.js`, or use Tampermonkey’s “Install from file” on that file.
-3. Open Workday **Enter Time**. A **Weekly hours** panel appears at the bottom right.
+2. Add `workday-weekly-hours.user.js` and, if you want the wipe tool, `workday-delete-hours.user.js`.
+3. Open `https://www.myworkday.com/`. The scripts match that host directly, plus any `myworkday.com` or `workday.com` host, including frames.
 
-## Jobs
+## Default week
 
-Defaults are the hours read on November 11, 2026. Time type is Regular Hours.
+Each week uses the same Regular Hours template and totals 20. Monday through Sunday:
 
-- **Nov 2–8, 2026:** all four jobs are 0 hours, Monday–Sunday.
-- **Nov 9–15, 2026:**
-  - Reiss `P590506`: 1, 1, 1.25, 2, 0, 0, 0.5
-  - Yi `P581852`: 0, 3.25, 1, 0, 1, 0, 1
-  - Floryan `P596989`: 0, 0, 2, 2, 2, 1, 1
-  - Somal `P599534`: 0, 0, 0, 0, 0, 0, 0
+- Reiss `P590506`: 0.75, 1, 1.25, 2, 0, 0, 0.5 (5.5)
+- Yi `P581852`: 0, 3.25, 1, 0, 1, 0, 0.5 (5.75)
+- Floryan `P596989`: 0, 0, 2, 2, 2, 0.75, 1 (7.75)
+- Somal `P599534`: 0, 0, 0, 1, 0, 0, 0 (1)
 
-Edit any day in the panel. Changes are saved in the browser.
+Nov 2–8 and Nov 9–15 both start from this template. Edit any day in the panel. Changes are saved in the browser.
 
 ## Fill
 
-**Fill selected job** switches to that position in Quick Add and types the hours for the selected week.
+**Fill selected job** opens Quick Add for the selected week and position and types that row.
 
-If that job’s calendar blocks already match the panel, Fill skips it and does not add another block. Quick Add only adds time; it does not edit an existing block.
+If the calendar already shows the same hours, Fill skips the job. If that job already has different hours, Fill does not add another block. Quick Add only adds time; it does not edit a block.
 
-The script never clicks Submit. **Click OK after filling** is off until you turn it on. With it off, Fill leaves the grid for you to review.
+The script never clicks Submit. **Click OK after filling** is off until you turn it on.
+
+## Delete
+
+`workday-delete-hours.user.js` adds a **Delete hours** panel. Pick one week or both visible weeks, check **Delete these blocks**, then click **Delete**. It only removes blocks on the dates you picked, and it never clicks Submit.

@@ -71,44 +71,38 @@
   <div id="log"></div>
   <script>
     const days = ["Nov 2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"];
-    const blocks = {
-      7: ["1 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)"],
-      8: [
+    const weekLines = [
+      ["0.75 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)"],
+      [
         "1 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
         "3.25 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
       ],
-      9: {
-        shown: [
-          "1.25 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
-          "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
-        ],
-        all: [
-          "1.25 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
-          "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)",
-          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
-        ]
-      },
-      10: [
-        "2 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
-        "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
-      ],
-      11: [
+      [
+        "1.25 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
         "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
         "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
       ],
-      12: ["1 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"],
-      13: {
-        shown: [
-          "0.5 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
-          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)"
-        ],
-        all: [
-          "0.5 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
-          "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
-          "1 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
-        ]
-      }
-    };
+      [
+        "2 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+        "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)",
+        "1 Hours: P599534 STAT UTA/Grader-Somal (+), AS-Statistics (STAT)-JM (Harsimran Somal)"
+      ],
+      [
+        "1 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
+        "2 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+      ],
+      ["0.75 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"],
+      [
+        "0.5 Hours: P590506 UTA - Reiss (+), EN-Comp Science Dept-JM (Charles Reiss)",
+        "0.5 Hours: P581852 UTA - Yi, EN-Comp Science Dept-JM (Xinyao Yi)",
+        "1 Hours: P596989 UTA - Floryan (+), EN-Comp Science Dept-JM (Mark Richard Floryan)"
+      ]
+    ];
+    const blocks = {};
+    weekLines.forEach((lines, day) => {
+      blocks[day] = lines;
+      blocks[day + 7] = lines;
+    });
     const calendar = document.getElementById("calendar");
     days.forEach((label, index) => {
       const cell = document.createElement("div");

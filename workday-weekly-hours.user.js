@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name         Workday Weekly Hours
 // @namespace    https://github.com/tksoftw/workday-script
-// @version      1.0.0
+// @version      1.1.0
 // @description  Fill UVA Workday Quick Add hours for each job. Review before OK. Never submits.
 // @author       tksoftw
+// @match        https://www.myworkday.com/*
 // @match        https://*.myworkday.com/*
 // @match        https://*.workday.com/*
-// @match        http://127.0.0.1:*/test/*
-// @match        http://localhost:*/test/*
+// @include      /^https?:\/\/([^/?#]*\.)?myworkday\.com(\/|$)/
+// @include      /^https?:\/\/([^/?#]*\.)?workday\.com(\/|$)/
+// @include      http://127.0.0.1:*/test/*
+// @include      http://localhost:*/test/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
@@ -17,12 +20,12 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "workdayWeeklyHours.v1";
+  const STORAGE_KEY = "workdayWeeklyHours.v2";
   const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
   const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  // Hours read from Enter Time on Nov 11, 2026. Time type is Regular Hours.
-  // Week of Nov 2–8 had no blocks. Week of Nov 9–15 matched the 20.00 Regular total.
+  // Default template for every week. Time type is Regular Hours. Each week totals 20.
+  // Reiss Monday 0.75, Yi Sunday 0.5, Floryan Saturday 0.75, Somal Thursday 1.
   const JOBS = [
     {
       id: "P590506",
@@ -61,19 +64,16 @@
 
   const TIME_TYPE = "Regular Hours";
 
+  const WEEK_TEMPLATE = {
+    P590506: [0.75, 1, 1.25, 2, 0, 0, 0.5],
+    P581852: [0, 3.25, 1, 0, 1, 0, 0.5],
+    P596989: [0, 0, 2, 2, 2, 0.75, 1],
+    P599534: [0, 0, 0, 1, 0, 0, 0],
+  };
+
   const DEFAULT_HOURS = {
-    "2026-11-02": {
-      P590506: [0, 0, 0, 0, 0, 0, 0],
-      P581852: [0, 0, 0, 0, 0, 0, 0],
-      P596989: [0, 0, 0, 0, 0, 0, 0],
-      P599534: [0, 0, 0, 0, 0, 0, 0],
-    },
-    "2026-11-09": {
-      P590506: [1, 1, 1.25, 2, 0, 0, 0.5],
-      P581852: [0, 3.25, 1, 0, 1, 0, 1],
-      P596989: [0, 0, 2, 2, 2, 1, 1],
-      P599534: [0, 0, 0, 0, 0, 0, 0],
-    },
+    "2026-11-02": JSON.parse(JSON.stringify(WEEK_TEMPLATE)),
+    "2026-11-09": JSON.parse(JSON.stringify(WEEK_TEMPLATE)),
   };
 
   const store = {
@@ -286,10 +286,20 @@
   }
 
   function hourInputs() {
-    const inputs = allElements(document).filter(
-      (el) => el.getAttribute("data-automation-id") === "numericInput" && visible(el)
-    );
-    return inputs.slice(0, 7);
+    return allElements(document)
+      .filter((el) => {
+        if (el.getAttribute("data-automation-id") !== "numericInput") return false;
+        if (el.closest && el.closest("#wwh-root")) return false;
+        let node = el.parentElement;
+        while (node) {
+          if (node.hidden) return false;
+          const style = window.getComputedStyle(node);
+          if (style.display === "none" || style.visibility === "hidden") return false;
+          node = node.parentElement;
+        }
+        return true;
+      })
+      .slice(0, 7);
   }
 
   async function openQuickAdd() {
@@ -311,25 +321,35 @@
   }
 
   async function selectWeek(label) {
-    const radio = await waitFor(() => {
+    const host = await waitFor(() => {
       return allElements(document).find((el) => {
         if (!visible(el)) return false;
-        const role = el.getAttribute("role");
-        const auto = el.getAttribute("data-automation-id");
-        if (role !== "radio" && auto !== "radioBtn") return false;
-        return textOf(el).includes(label) || (el.getAttribute("aria-label") || "").includes(label);
+        return el.getAttribute("data-automation-id") === "radioBtn" && textOf(el).includes(label);
       });
     }, 4000);
-    if (!radio) throw new Error("Could not find week " + label);
-    radio.click();
-    await sleep(200);
+    if (!host) throw new Error("Could not find week " + label);
+    const input = host.querySelector("input[type=radio]");
+    const caption = host.querySelector("label");
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.click();
+    }
+    if (caption) caption.click();
+    await sleep(250);
   }
 
   async function clickNext() {
     const next = findButton("Next");
     if (!next) throw new Error("Next is not on this Quick Add step.");
     next.click();
-    await sleep(400);
+    const advanced = await waitFor(() => {
+      const widget = allElements(document).find((el) => {
+        return el.getAttribute("data-automation-id") === "selectWidget" && visible(el);
+      });
+      return widget || hourInputs().length === 7;
+    }, 8000);
+    if (!advanced) throw new Error("Quick Add did not advance.");
   }
 
   async function selectPosition(job) {
@@ -372,13 +392,12 @@
 
   function maybeClickOk(applyOk) {
     if (!applyOk) return false;
-    const ok = allElements(document).find((el) => {
-      if (!visible(el)) return false;
-      const auto = el.getAttribute("data-automation-id") || "";
-      const label = textOf(el).toLowerCase();
-      return auto === "wd-CommandButton_uic_okButton" || label === "ok";
+    const dialog = dialogs().find((item) => /quick add/i.test(textOf(item)));
+    if (!dialog) throw new Error("Quick Add is not open, so OK was not clicked.");
+    const ok = [...dialog.querySelectorAll("button")].find((button) => {
+      return textOf(button).toLowerCase() === "ok" && visible(button);
     });
-    if (!ok) throw new Error("OK is not available.");
+    if (!ok) throw new Error("Quick Add OK is not available.");
     ok.click();
     return true;
   }
@@ -408,6 +427,15 @@
         values: desired,
       };
     }
+    if (existing && sum(existing) > 0) {
+      return {
+        job: job.short,
+        week: week.title,
+        action: "skipped",
+        detail: "calendar already has different hours, so nothing was added",
+        values: existing,
+      };
+    }
     await openQuickAdd();
     if (document.body.innerText.includes("Select Week")) {
       await selectWeek(week.label);
@@ -417,15 +445,16 @@
     await clickNext();
     const values = await fillInputs(desired);
     const applied = maybeClickOk(applyOk);
-    const warning =
-      existing && sum(existing) > 0
-        ? " Quick Add adds a new block on top of hours already on the calendar."
-        : "";
+    if (applied) {
+      const closed = await waitFor(() => hourInputs().length === 0, 8000);
+      if (!closed) throw new Error("Quick Add stayed open after OK.");
+      await sleep(400);
+    }
     return {
       job: job.short,
       week: week.title,
       action: applied ? "applied" : "filled",
-      detail: (applied ? "OK clicked." : "Left for review. OK was not clicked.") + warning,
+      detail: applied ? "OK clicked in Quick Add. Timesheet was not submitted." : "Left for review. OK was not clicked.",
       values,
     };
   }
@@ -498,7 +527,7 @@
       option.textContent = week.label;
       weekSelect.appendChild(option);
     }
-    weekSelect.value = "2026-11-09";
+    weekSelect.value = "2026-11-02";
     for (const job of JOBS) {
       const option = document.createElement("option");
       option.value = job.id;
@@ -555,7 +584,7 @@
       );
       saveSettings(settings);
       render();
-      setStatus("Restored the hours read from Workday for this week.");
+      setStatus("Restored the default 20-hour week.");
     });
     root.querySelector("#wwh-check").addEventListener("click", async () => {
       setStatus("Reading the calendar…");
@@ -611,5 +640,10 @@
     loadSettings,
     readCalendar,
     fillJob,
+    fillWeek: async (weekId, applyOk) => {
+      const results = [];
+      for (const job of JOBS) results.push(await fillJob(weekId, job.id, applyOk));
+      return results;
+    },
   };
 })();
